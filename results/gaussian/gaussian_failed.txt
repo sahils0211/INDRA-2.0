@@ -1,0 +1,13 @@
+filename,reason
+CO_CO21_1_25K.dat,no_peaks_found
+CO_CO2_1_10__100K.dat,no_peaks_found
+CO_CO2_1_10__110K.dat,no_peaks_found
+CO_CO2_1_10__90K.dat,no_peaks_found
+COoverCO2_90K.dat,no_peaks_found
+H2O_CH3OH_CO2_9_1_2__185K.dat,zero_after_baseline
+PureCO_15K_2.dat,no_peaks_found
+PureCO_35K.dat,no_peaks_found
+PureCO_35K_2.dat,no_peaks_found
+PureCO_40K.dat,no_peaks_found
+PureCO_45K.dat,no_peaks_found
+PureH2OUV_irr._10K_2.dat,no_peaks_found

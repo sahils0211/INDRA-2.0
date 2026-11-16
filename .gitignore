@@ -1,0 +1,52 @@
+# ---------------------------------------------------------------
+# Large artifacts deliberately kept out of version control.
+# See models/README.md and data/README.md for how to obtain them.
+# ---------------------------------------------------------------
+
+# Trained classifier bundle (~463 MB — exceeds GitHub's 100 MB file limit)
+lgbm_classifiers_*.pkl
+
+# Synthetic training arrays (1.6 GB + 294 MB per version)
+*.npy
+
+# LIDA laboratory spectral library (~700 MB, 1209 files)
+data/lida_raw_data/
+lida_raw_data/
+
+# Gaussian peak database (65 MB derived artifact)
+gaussian_peaks_database.json
+
+# Archives
+*.zip
+*.tar.gz
+*.tar.xz
+
+# ---------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# ---------------------------------------------------------------
+# LaTeX build artifacts
+# ---------------------------------------------------------------
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# ---------------------------------------------------------------
+# OS / editor
+# ---------------------------------------------------------------
+.DS_Store
+Thumbs.db
+~$*
+.vscode/
+.idea/

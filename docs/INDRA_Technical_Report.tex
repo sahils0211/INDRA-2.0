@@ -1,0 +1,1476 @@
+% =====================================================================
+%  INDRA 2.0 — Technical Report
+%  Versions 3.8 and 3.9
+%  Compile:  pdflatex INDRA_Technical_Report.tex   (run twice for TOC)
+% =====================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=2.4cm,top=2.6cm,bottom=2.6cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage[most]{tcolorbox}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+
+% ---------------------------------------------------------------- colours
+\definecolor{navy}{HTML}{1E2761}
+\definecolor{navylight}{HTML}{3A4A8F}
+\definecolor{ice}{HTML}{EEF3FC}
+\definecolor{warnred}{HTML}{A8322A}
+\definecolor{warnbg}{HTML}{FBEDEB}
+\definecolor{goodgreen}{HTML}{1F6A50}
+\definecolor{goodbg}{HTML}{E8F3EE}
+\definecolor{goldc}{HTML}{9A7524}
+\definecolor{goldbg}{HTML}{FBF4E4}
+\definecolor{greytext}{HTML}{555D68}
+\definecolor{rulegrey}{HTML}{C9D2E4}
+
+% ---------------------------------------------------------------- headings
+\titleformat{\section}
+  {\color{navy}\normalfont\Large\bfseries}{\thesection}{0.7em}{}
+\titleformat{\subsection}
+  {\color{navylight}\normalfont\large\bfseries}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}
+  {\color{navylight}\normalfont\normalsize\bfseries}{\thesubsubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.6em}{0.7em}
+\titlespacing*{\subsection}{0pt}{1.1em}{0.5em}
+
+% ---------------------------------------------------------------- headers
+\setlength{\headheight}{22pt}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{rulegrey}\leaders\hrule height \headrulewidth\hfill}}
+\fancyhead[L]{\color{greytext}\small INDRA 2.0 --- Technical Report}
+\fancyhead[R]{\color{greytext}\small v3.8 \& v3.9}
+\fancyfoot[C]{\color{greytext}\small\thepage}
+
+% ---------------------------------------------------------------- boxes
+\newtcolorbox{keybox}[1][]{
+  breakable, colback=ice, colframe=navy, boxrule=0pt, leftrule=3pt,
+  arc=1pt, left=10pt, right=10pt, top=8pt, bottom=8pt, #1}
+\newtcolorbox{warnbox}[1][]{
+  breakable, colback=warnbg, colframe=warnred, boxrule=0pt, leftrule=3pt,
+  arc=1pt, left=10pt, right=10pt, top=8pt, bottom=8pt, #1}
+\newtcolorbox{goodbox}[1][]{
+  breakable, colback=goodbg, colframe=goodgreen, boxrule=0pt, leftrule=3pt,
+  arc=1pt, left=10pt, right=10pt, top=8pt, bottom=8pt, #1}
+\newtcolorbox{goldbox}[1][]{
+  breakable, colback=goldbg, colframe=goldc, boxrule=0pt, leftrule=3pt,
+  arc=1pt, left=10pt, right=10pt, top=8pt, bottom=8pt, #1}
+
+% ---------------------------------------------------------------- macros
+\newcommand{\um}{\,$\mu$m}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\htwoo}{H$_2$O}
+\newcommand{\cotwo}{CO$_2$}
+\newcommand{\chthreeoh}{CH$_3$OH}
+\newcommand{\nhfour}{NH$_4^+$}
+\newcommand{\ocn}{OCN$^-$}
+\newcommand{\tauv}{$\tau$}
+
+\setlist[itemize]{itemsep=2pt, topsep=4pt, parsep=0pt}
+\setlist[enumerate]{itemsep=2pt, topsep=4pt, parsep=0pt}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\renewcommand{\arraystretch}{1.25}
+
+% =====================================================================
+\begin{document}
+
+% ---------------------------------------------------------------- title
+\begin{titlepage}
+\centering
+\vspace*{3.2cm}
+
+{\color{navy}\Huge\bfseries INDRA 2.0\par}
+\vspace{0.7cm}
+{\color{navylight}\Large\itshape Ice Component Identification using\\[2pt]
+Deep Learning on Astrophysics Spectra\par}
+
+\vspace{1.4cm}
+{\color{rulegrey}\rule{0.45\textwidth}{1pt}}
+\vspace{1.2cm}
+
+{\Large\bfseries Complete Technical Report\par}
+\vspace{0.35cm}
+{\large Pipeline Versions 3.8 and 3.9\par}
+
+\vspace{2.2cm}
+
+{\large School of Physical Sciences\\[2pt]
+National Institute of Science Education and Research, Bhubaneswar\par}
+
+\vspace{0.9cm}
+{\color{greytext}\normalsize In collaboration with Prathap Rayalacheruvu\\
+and Prof.\ Liton Majumdar (SEPS, NISER)\par}
+
+\vfill
+{\color{greytext}November 2026}
+\end{titlepage}
+
+% ---------------------------------------------------------------- TOC
+{\small\setlength{\parskip}{0pt}\tableofcontents}
+\thispagestyle{fancy}
+\newpage
+
+% =====================================================================
+\section{The Problem, Stated Plainly}
+% =====================================================================
+
+This report describes a machine learning system built to solve a specific
+measurement problem in astronomy. The problem can be understood completely
+without any background in chemistry or astronomy, and this opening section
+presents it in two ways: first as a physical story, then stripped down to
+the mathematical problem that the software actually solves.
+
+\subsection{The physical story}
+
+When a new star forms, it does so inside a cold, dense cloud of gas and
+dust. Long before the star ignites, molecules in that cloud freeze onto
+microscopic dust grains and build up layers of ice --- not only water ice,
+but mixed ices containing carbon dioxide, methanol, formic acid, ammonia
+and dozens of other compounds. These ice layers are the chemical raw
+material from which planets and comets are later assembled, so knowing what
+they are made of is one of the central questions in the study of star
+formation.
+
+The James Webb Space Telescope (JWST) can measure these ices indirectly.
+Its Mid-Infrared Instrument (MIRI) records how much light the young star
+emits at each wavelength between 5 and 28 micrometres. When light passes
+through the surrounding ice, each type of molecule absorbs light at its own
+characteristic wavelengths. The recorded spectrum therefore looks like a
+smooth hill with a series of dips carved into it, and each dip is the
+fingerprint of a particular molecule.
+
+If each molecule produced a single clean, isolated dip, reading the
+composition off the spectrum would be straightforward. It does not. The
+dips overlap heavily. Water absorbs broadly around 3 and 6\um. Methanol and
+formic acid both absorb near 9--10\um. Ammonium and several other
+nitrogen-bearing species all crowd around 6.8\um. On top of this, silicate
+dust --- ordinary rocky mineral grains, not ice at all --- produces an
+enormous broad absorption centred at 9.7\um{} that sits underneath
+everything else and must be removed before the ice features can even be
+seen.
+
+\subsection{How the problem was solved before}
+
+The established approach is manual. An expert astronomer inspects the
+spectrum, decides from experience which ices are plausibly present, selects
+a corresponding set of laboratory reference spectra --- real ice mixtures
+measured in a laboratory under controlled conditions --- and fits a weighted
+sum of those references to the observation. On our benchmark source this
+produced an excellent result, but it carries three costs:
+
+\begin{itemize}
+  \item it takes an expert weeks of work per source;
+  \item it does not transfer to a new source without repeating the whole
+        manual process;
+  \item it is not reproducible --- two astronomers may select different
+        reference files and reach different conclusions.
+\end{itemize}
+
+\subsection{The computational problem, stripped of astronomy}
+
+Underneath the astronomy, the task is a standard problem in applied
+mathematics. The essential statement is this:
+
+\begin{keybox}
+\textbf{Problem statement.} We are given an observed signal
+$\mathbf{b}\in\mathbb{R}^{3000}$ (the measured absorption spectrum, sampled
+on a fixed wavelength grid) and a dictionary
+$\mathbf{A}\in\mathbb{R}^{3000\times 1209}$ whose columns are laboratory
+reference spectra. We must find a coefficient vector
+$\mathbf{x}\in\mathbb{R}^{1209}$ such that
+\[
+   \mathbf{A}\mathbf{x} \;\approx\; \mathbf{b},
+   \qquad \mathbf{x} \ge 0,
+   \qquad \|\mathbf{x}\|_0 \ \text{small.}
+\]
+The non-negativity constraint is physical: a mixture cannot contain a
+negative amount of a substance. The sparsity requirement is also physical:
+a real ice mantle contains on the order of 10--25 distinguishable
+components, not 1209.
+\end{keybox}
+
+Three properties make this harder than it first appears.
+
+\begin{description}[style=nextline, leftmargin=0pt, labelindent=0pt, labelwidth=0pt, labelsep=0pt, itemsep=4pt]
+  \item[The dictionary is highly correlated.]
+  Many columns of $\mathbf{A}$ are nearly identical to one another. The
+  same ice mixture measured at 20\,K and at 30\,K produces two spectra that
+  differ by less than the measurement noise. Classical least squares
+  becomes unstable when the design matrix has near-duplicate columns ---
+  the solver can distribute weight between them almost arbitrarily.
+
+  \item[The dictionary is much wider than it is informative.]
+  With 1209 candidate columns and an effective resolution that smooths
+  away fine detail, many different coefficient vectors reproduce
+  $\mathbf{b}$ about equally well. The problem is underdetermined in
+  practice even though $3000 > 1209$ formally.
+
+  \item[Ground truth is almost nonexistent.]
+  There is exactly one source for which a trusted, published answer
+  exists. Everything else must be validated indirectly.
+\end{description}
+
+\subsection{What INDRA 2.0 adds}
+
+INDRA 2.0 replaces the manual file-selection step with a trained
+classifier. Rather than an astronomer saying \emph{``I believe formic acid
+is present, so I will include the formic acid references''}, a machine
+learning model examines the spectrum and reports \emph{``given this
+absorption pattern, the probability that formic acid is present is
+44\%''}. Those probabilities then restrict which columns of $\mathbf{A}$
+are offered to the fitting stage.
+
+The system therefore has two distinct stages, and keeping them separate is
+the central architectural decision of the project:
+
+\begin{keybox}
+\textbf{Stage 1 --- Detection.} Machine learning classifiers read the
+spectrum and output a presence probability for each candidate species.
+This answers \emph{which} substances are present.
+
+\vspace{4pt}
+\textbf{Stage 2 --- Quantification.} A constrained least-squares solver
+fits the selected laboratory spectra to the observation. This answers
+\emph{how much} of each is present.
+\end{keybox}
+
+\subsection{Sources used in this work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}L{3.4cm}L{4.6cm}L{6.0cm}@{}}
+\toprule
+\textbf{Source} & \textbf{Role} & \textbf{Notes} \\
+\midrule
+NGC 1333 IRAS 2A & Validation benchmark &
+Published decomposition available (Rayalacheruvu et al.\ 2025): 76
+laboratory spectra, 15 mixture components, 17 chemical species. \\
+L1448 IRS2 & Blind generalisation test &
+Class 0 protostar, $L\approx5.2\,L_\odot$. No published ground truth. \\
+L1448 IRS3B & Blind generalisation test &
+Class 0 binary system. No published ground truth. \\
+\bottomrule
+\end{tabular}
+\caption{The three target sources. All three lie in the Perseus molecular
+cloud at roughly 300\,pc.}
+\end{table}
+
+The distinction between the benchmark and the two blind sources matters
+throughout this report. IRAS 2A is the only source against which accuracy
+can be measured. L1448 IRS2 and IRS3B are the only sources that test
+whether the pipeline generalises --- and, as Section~\ref{sec:leakage}
+describes, the difference between these two situations is precisely where
+the project's most serious methodological error occurred.
+
+% =====================================================================
+\section{Input Data and Preprocessing}
+% =====================================================================
+
+\subsection{The laboratory reference library}
+
+The Leiden Ice Database (LIDA) provides 1209 laboratory ice spectra. Each
+file is a two-column ASCII table: wavelength (or wavenumber) in the first
+column, absorption in the second. The files cover many different mixtures
+--- for example ``water:methanol:CO$_2$ in a 2:1:1 ratio at 15\,K'' ---
+measured at a range of temperatures.
+
+The library is not uniform, and normalising it was a substantial
+engineering task:
+
+\begin{itemize}
+  \item some files store wavenumber (cm$^{-1}$), others wavelength
+        ($\mu$m); the loader detects which by checking whether the mean of
+        column one exceeds 100, and converts via $\lambda = 10^4/\nu$;
+  \item coverage varies --- some files span the whole 5--28\um{} range,
+        others only a narrow band around a single absorption feature;
+  \item baselines, noise levels and sampling grids differ between files;
+  \item about 40 files added from external sources used Windows-1252
+        encoding with an en-dash in the header comment, which caused
+        \code{np.loadtxt} to fail; the loader was changed to read with
+        \code{encoding='latin-1'} and parse line by line.
+\end{itemize}
+
+Every loaded spectrum is interpolated onto a fixed grid of 3000 points
+spanning 5.0--28.0\um{} and normalised so that its peak value equals 1.
+The normalisation is essential: without it, substances with intrinsically
+strong absorption would dominate every synthetic mixture regardless of the
+concentration actually assigned to them.
+
+\subsection{From raw telescope output to optical depth}
+
+The telescope records flux --- how much light arrives at each wavelength.
+The quantity needed for fitting is optical depth, defined as
+\[
+  \tau(\lambda) \;=\; \ln\!\left(\frac{F_{\text{cont}}(\lambda)}
+                                      {F_{\text{obs}}(\lambda)}\right),
+\]
+where $F_{\text{obs}}$ is the observed flux and $F_{\text{cont}}$ is the
+\emph{continuum} --- an estimate of what the flux would have been if no ice
+were present. Optical depth is the natural quantity because contributions
+from different substances add linearly in $\tau$, which is exactly what
+makes the linear model $\mathbf{Ax}\approx\mathbf{b}$ valid.
+
+Two subtractions are therefore needed before any fitting can begin, and
+both are error-prone:
+
+\begin{enumerate}
+  \item \textbf{Continuum subtraction.} The underlying emission of the
+        protostar must be estimated and divided out. Guess it too high and
+        spurious absorption appears everywhere; guess it too low and real
+        features are erased.
+  \item \textbf{Silicate removal.} Rocky dust grains produce a broad
+        absorption centred at 9.7\um{} with a secondary feature near
+        18\um. This is not ice and must be modelled and removed.
+\end{enumerate}
+
+\begin{warnbox}
+Errors made at this stage propagate into every downstream result. As
+Section~\ref{sec:known-problems} documents, the single largest remaining
+limitation of the whole pipeline is a continuum/silicate artifact, not a
+failure of the machine learning or the fitting.
+\end{warnbox}
+
+\subsection{Three generations of continuum and silicate fitting}
+
+\subsubsection*{Version 1 --- spline continuum (abandoned)}
+
+A \code{UnivariateSpline} was fitted through manually chosen anchor points.
+This failed on deeply embedded sources: anchor selection was difficult to
+automate, and nothing prevented the spline from dipping into genuine
+absorption features and erasing them. Fit quality on the L1448 sources was
+only 30--44\%.
+
+\subsubsection*{Version 2 --- log-log polynomial with hard penalty}
+
+This adopted the approach used in Prathap's original INDRA: a degree-4
+polynomial in $\log\lambda$ versus $\log F$ space, with one critical
+physical constraint built in --- the continuum may never fall below the
+observed flux anywhere, because optical depth must be non-negative
+everywhere. The constraint was enforced with a hard penalty function and
+optimised with Nelder--Mead using hyperparameters $w_{\text{anchor}} =
+5.3$, $w_{\text{curve}} = 13.5$.
+
+Fit quality jumped from 30--44\% to 73--74\%. The CH$_4$ band at 7.7\um{}
+was recovered (previously zero), and formic acid and formate were detected
+for the first time. However, with 34 free parameters the Nelder--Mead
+optimiser never converged within its iteration limit on either L1448
+source --- it stopped at a local minimum.
+
+\subsubsection*{Version 3 --- L-BFGS-B with a soft barrier (current)}
+
+Three targeted fixes were applied:
+
+\begin{description}[style=nextline, leftmargin=0pt, labelindent=0pt, labelwidth=0pt, labelsep=0pt, itemsep=4pt]
+  \item[Fix 1 --- gradient-based optimiser.]
+  Nelder--Mead was replaced with L-BFGS-B. Because L-BFGS-B requires
+  gradients, the hard penalty function was replaced by a smooth
+  exponential barrier of the form $\exp(k \times \text{violation})$, which
+  is differentiable everywhere. Convergence now occurs in roughly 1000
+  iterations rather than the 200{,}000+ Nelder--Mead required.
+
+  \item[Fix 2 --- additional long-wavelength anchors.]
+  Anchor points at 17.5\um{} and 18.0\um{} were added to constrain the
+  continuum at the boundary of the water libration region.
+
+  \item[Fix 3 --- two-component silicate model.]
+  The single Drude profile was replaced by a physically motivated
+  two-component model: olivine (peak 9.8\um) plus pyroxene (peak
+  9.65\um), each with a secondary 18\um{} band, using grain parameters
+  from Weingartner \& Draine (2001).
+\end{description}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Metric} & \textbf{V1 (spline)} & \textbf{V2 (Nelder--Mead)} &
+\textbf{V3 (L-BFGS-B)} \\
+\midrule
+IRS2 fit quality        & 30\%  & 74\%          & 74\% (converged) \\
+IRS3B fit quality       & 44\%  & 73\%          & 73\% (converged) \\
+$\tau$(7.7\um) CH$_4$   & 0.000 & 0.276         & 0.276 \\
+Silicate $\tau_{\text{peak}}$ & 0.05 & 8.00 (at bound) & 8.00 (at bound) \\
+$\tau$(20\um) artifact  & 0.66 / 0.27 & 1.41 / 1.38 & 1.41 / 1.38 \\
+CH$_4$ detected         & No    & Yes           & Yes \\
+HCOOH detected          & No    & Yes           & Yes \\
+Optimiser converged     & N/A   & No (max iter) & Yes \\
+\bottomrule
+\end{tabular}
+\caption{Continuum fitting across three generations, evaluated on the two
+L1448 sources.}
+\end{table}
+
+\subsubsection*{The remaining artifact}
+
+Both L1448 sources still show $\tau(20\,\mu\text{m}) \approx 1.4$. This is
+physically impossible: no known interstellar ice absorbs beyond 19\um, so
+the optical depth there should be essentially zero. The cause is that the
+cold envelope emits strongly between 20 and 28\um{} due to thermal dust
+emission, and a degree-4 polynomial cannot simultaneously fit the ice
+region (5--17\um) and the thermal tail (20--28\um) without undershooting
+between 17 and 20\um.
+
+The proposed fix --- not yet implemented --- is to use the physical fact
+that $\tau_{\text{ice}}(19\text{--}20\,\mu\text{m}) = 0$ as a hard
+calibration anchor for the silicate model's secondary 18\um{} band. Pinning
+that band to its correct amplitude should cascade into a corrected silicate
+profile across the entire 8--17\um{} region where silicate and ice overlap.
+
+% =====================================================================
+\section{Version 3.8 --- The Full Pipeline}
+% =====================================================================
+
+This section describes every technique used in v3.8, in the order the data
+flows through them.
+
+\subsection{Step 1 --- Spectral clustering of the library}
+
+\subsubsection*{The problem being solved}
+
+Of the 1209 library files, many are temperature variants of the same
+mixture --- for instance water:methanol measured at 10, 15, 20, 30, 50,
+70, 100, 120 and 150\,K. At the effective resolution of MIRI ($R\sim100$),
+several of these are indistinguishable from one another. Training one
+classifier per file would mean 1209 classifiers, many of them attempting to
+separate signals that are identical within the noise, each trained on very
+few examples.
+
+\subsubsection*{The method}
+
+Hierarchical clustering with complete linkage, using cosine distance:
+\[
+  d_{\cos}(\mathbf{u},\mathbf{v}) \;=\;
+  1 - \frac{\mathbf{u}\cdot\mathbf{v}}{\|\mathbf{u}\|\,\|\mathbf{v}\|}.
+\]
+Cosine distance measures the angle between two spectra viewed as vectors in
+3000-dimensional space, ignoring overall scale. This is the correct metric
+here: the same ice measured at two different laboratory thicknesses
+produces spectra that differ in magnitude but point in the same direction,
+and should be treated as identical.
+
+The procedure is:
+
+\begin{enumerate}
+  \item Strip the temperature suffix from each filename using the regular
+        expression \code{r'\_\textbackslash d+[Kk]\$'} and group the
+        variants of each mixture.
+  \item Within each group, compute the pairwise cosine distance matrix and
+        run complete-linkage hierarchical clustering.
+  \item Test 2, 3 and 4 clusters; keep the largest number for which every
+        pair of clusters is separated by more than the threshold
+        $0.05$. Label the resulting clusters A, B, C, D.
+  \item Perform a cross-mixture merge: compute distances between all
+        cluster representatives across different mixtures and merge any
+        pair closer than $0.05$.
+\end{enumerate}
+
+The threshold $0.05$ was chosen to correspond approximately to the MIRI
+noise floor: two spectra within 5\% cosine distance cannot be
+distinguished at any realistic signal-to-noise ratio.
+
+\begin{goodbox}
+\textbf{Result:} 1209 files reduce to \textbf{284 spectral clusters}, a
+77\% reduction. Each cluster represents one spectrally distinguishable ice
+state and becomes one classification target, with roughly four times as
+many training examples per target as before.
+\end{goodbox}
+
+A useful validation: when recall was measured both strictly (exact cluster
+label) and generously (correct mixture, any temperature class), the gap was
+0.0\%. Every miss was a complete mixture miss, never a temperature-class
+confusion --- confirming that the clusters are genuinely distinct rather
+than arbitrary subdivisions.
+
+\subsection{Step 2 --- Synthetic training data generation}
+
+\subsubsection*{Why synthetic data is necessary}
+
+Supervised learning requires labelled examples: spectra for which the true
+composition is known. Real JWST spectra with trusted compositions number in
+the single digits. The solution is to generate training data by simulating
+the physics.
+
+\subsubsection*{The generator}
+
+135{,}000 synthetic spectra were produced (120{,}000 general plus 15{,}000
+targeted). Each is built as follows:
+
+\begin{enumerate}
+  \item \textbf{Select components.} Draw a number of layers (10--25,
+        peaking at 15) and select that many cluster representatives.
+        \htwoo, \cotwo{} and CO are always included as mandatory species.
+  \item \textbf{Assign fractions by Dirichlet sampling.} Mixing fractions
+        are drawn from a Dirichlet distribution, which guarantees the
+        fractions are non-negative and sum to one --- exactly the
+        structure of a physical mixture.
+  \item \textbf{Scale and sum.} Multiply by a total optical depth and add
+        the components linearly.
+  \item \textbf{Inject silicate.} In 80\% of spectra, add a synthetic
+        silicate feature built from Drude oscillator profiles at 9.7\um{}
+        (Si--O stretch) and 18\um{} (O--Si--O bend), with peak optical
+        depth sampled from 0.5--8.0. Grain size factor, crystalline
+        fraction and olivine/pyroxene ratio are randomised per spectrum.
+  \item \textbf{Simulate observation.} Convert to flux, add Gaussian noise
+        with $\sigma = 1/\text{SNR}$ for SNR drawn uniformly from
+        $U(50,200)$, apply median smoothing and a randomised polynomial
+        continuum, and convert back to optical depth.
+\end{enumerate}
+
+\subsubsection*{Three generator bugs that had to be found}
+
+The generator went through several revisions, and three bugs in earlier
+versions are worth recording because each silently degraded model quality:
+
+\begin{description}[style=nextline, leftmargin=0pt, labelindent=0pt, labelwidth=0pt, labelsep=0pt, itemsep=4pt]
+  \item[Temperature normalisation.] Temperatures were divided by 200\,K
+        while the true maximum in the database is 150\,K, placing some
+        normalised values above 1.0. Fixed by dividing by 150.
+
+  \item[Noise too small.] Noise $\sigma$ was hard-coded at $10^{-4}$,
+        roughly 50--100 times smaller than real MIRI noise. The model
+        trained on unrealistically clean data and failed to transfer.
+        Fixed by sampling SNR per spectrum.
+
+  \item[No normalisation before mixing.] Laboratory spectra were summed
+        without first normalising each to peak 1, so substances with
+        intrinsically large absorption dominated regardless of their
+        assigned Dirichlet fraction. Fixed by normalising at load time.
+\end{description}
+
+\subsubsection*{Targeted generation for weak species}
+
+Some species are genuinely hard to learn because their absorption features
+are intrinsically weak. If such a species appears in training at a typical
+5\% mixing fraction, its contribution may fall below the noise floor --- so
+the model receives a positive label with no detectable signal in the input,
+and correctly learns to predict near-zero probability.
+
+Two mechanisms address this:
+
+\begin{itemize}
+  \item A list of \code{HARD\_SPECIES\_KW} (SO$_2$, H$_2$CO, CH$_3$OCHO,
+        CH$_3$CH$_2$OH, \ocn, CH$_3$COOH, HCOOH, CH$_3$CHO and
+        variants). Any species on this list receives a Dirichlet
+        concentration parameter of $\alpha = \max(\alpha_{\text{current}},
+        5.0)$, forcing its features above the noise floor during training.
+  \item 15{,}000 targeted spectra in which one critical species is forced
+        to appear prominently ($\alpha = 8$) alongside dominant water
+        ($\alpha = 10$); and in 40\% of general spectra, one critical
+        species is guaranteed to co-occur at $\alpha = 4$.
+\end{itemize}
+
+\subsection{Step 3 --- The LightGBM classifiers}
+
+\subsubsection*{Choice of model and metric}
+
+The modelling approach evolved through several stages before settling:
+Random Forest regression $\rightarrow$ XGBoost $\rightarrow$ LightGBM
+binary classification. Two decisions drove this.
+
+First, \textbf{classification rather than regression}. Predicting the
+fractional abundance of each species directly is numerically unstable when
+96\% of all labels are zero. Predicting presence or absence, and leaving
+quantification to Stage 2, is far better conditioned.
+
+Second, \textbf{PR-AUC rather than $R^2$ or F1} as the primary metric.
+$R^2$ is meaningless at 96\% sparsity --- predicting all zeros scores well.
+F1 depends on an arbitrary threshold choice. Precision--Recall AUC
+summarises the entire precision/recall trade-off without committing to a
+threshold, and is the standard choice for heavily imbalanced detection
+problems.
+
+\subsubsection*{Recall-first philosophy}
+
+One binary classifier is trained per cluster, each answering ``is this
+spectral cluster present?'' from the full 3000-point optical depth
+spectrum. Decision thresholds are tuned to a 90\% recall target rather than
+to maximise precision.
+
+This asymmetry is deliberate and is the architectural reason the two-stage
+design works:
+
+\begin{keybox}
+A missed detection in Stage 1 is unrecoverable --- a species never offered
+to the fitting stage can never be found. A false alarm in Stage 1 is
+cheap, because Stage 2 fits actual spectral shapes and the non-negativity
+constraint drives genuinely absent species to exactly zero. The classifiers
+are therefore tuned to over-report, and the fitting stage acts as the
+filter.
+\end{keybox}
+
+\subsubsection*{Two-tier training}
+
+Species on the hard list receive stronger classifiers:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Hyperparameter} & \textbf{Hard species} & \textbf{Normal species} \\
+\midrule
+\code{n\_estimators}      & 600  & 400  \\
+\code{learning\_rate}     & 0.03 & 0.05 \\
+\code{max\_depth}         & 7    & 6    \\
+\code{colsample\_bytree}  & 0.7  & 0.6  \\
+\code{min\_child\_samples}& 5    & 10   \\
+\code{pos\_weight} cap    & 80   & 40   \\
+\bottomrule
+\end{tabular}
+\caption{Two-tier LightGBM configuration.}
+\end{table}
+
+Class imbalance is handled per species rather than globally:
+\[
+  \texttt{pos\_weight} \;=\;
+  \operatorname{clip}\!\left(\frac{n_{\text{neg}}}{n_{\text{pos}}}
+  \times 0.5,\; 5.0,\; \text{cap}\right).
+\]
+A species present in 8\% of spectra receives a weight near 6; one present
+in 1\% receives the cap. Previously a single fixed weight of 15 was applied
+to all 284 classifiers regardless of their actual prevalence.
+
+\subsubsection*{A memory bug worth recording}
+
+An early training script used \code{joblib} to spawn eight worker
+processes, each holding its own 1.3\,GB copy of the training matrix ---
+10.4\,GB total, which overflowed available RAM and silently fell back to
+slow threading. The fix was to run the outer loop sequentially and let
+LightGBM use its own internal parallelism, keeping a single copy of the
+training data in memory. Training takes approximately 8--10 hours.
+
+\subsubsection*{The double-tau transform bug}
+
+The most consequential bug in the project's history. The generator saves
+its output already converted to optical depth (range 0--6.2). An earlier
+training script applied the conversion \emph{again}:
+\code{-log(clip(X, 0.002, 1.05))}. This inverted the representation ---
+strong absorption became near-zero and continuum became 6.2 --- so the
+model was trained on an inverted signal while prediction fed it correctly
+oriented data. The fix is a single line, \code{X\_tau = np.maximum(X\_raw,
+0.0)}, and it alone raised PR-AUC by nearly 10 percentage points and
+precision at the standard threshold from 29.3\% to 57.4\%.
+
+\subsubsection*{Patch classifiers for \ocn}
+
+Two additional classifiers were trained separately for the cyanate ion
+(\ocn), using spectral-correlation labelling. This species was
+underrepresented in the original library and its primary absorption at
+4.62\um{} falls just outside the MIRI range, making it hard for the main
+classifiers to detect. The patch classifiers achieve PR-AUC of 94.6\% and
+98.7\%, bringing the deployed total to 286.
+
+A note on chemistry that matters for the bookkeeping: \ocn{} at 80\,K is
+the thermal reaction product of HNCO + NH$_3$ $\rightarrow$ \nhfour{} +
+\ocn. Because the HNCO fundamental lies outside the MIRI range anyway, the
+pipeline uses \ocn{} detection to credit both parent species, encoded in a
+\code{PARENT\_RULES} table.
+
+\subsection{Step 4 --- The NNLS quantification stage}
+
+With a candidate list from Stage 1, the fitting stage must determine
+abundances. Four techniques combine here.
+
+\subsubsection*{Candidate selection by score floor}
+
+Earlier versions took a fixed number of top-scoring candidates
+(\code{N\_CANDIDATES = 50} or 120). A sensitivity analysis showed a clear
+plateau:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Candidates $N$ & 20 & 30 & 40 & 50 & 120 \\
+\midrule
+Recall & 11/15 & 12/15 & 12/15 & \textbf{14/15} & 14/15 \\
+\bottomrule
+\end{tabular}
+\caption{Candidate count sensitivity. Ranks 51--120 add no recall and only
+feed false positives into the solver.}
+\end{table}
+
+However, a fixed $N$ tuned on one source will not transfer. It was replaced
+by a score floor, \code{ML\_SCORE\_FLOOR = 0.05}: take every species
+scoring above 5\%. This self-scales --- a chemically simple source produces
+fewer candidates, a complex one more.
+
+\subsubsection*{Deduplication}
+
+Candidate spectra within cosine distance 0.015 of an already-selected
+candidate are dropped, to avoid feeding near-collinear columns to the
+solver.
+
+\subsubsection*{Tikhonov regularisation}
+
+Plain NNLS tends to concentrate all weight on a few dominant species
+(water and \cotwo) and zero out everything else. Adding a penalty term,
+\[
+  \min_{\mathbf{x}\ge 0}\;
+  \|\mathbf{A}\mathbf{x}-\mathbf{b}\|^2 + \alpha\|\mathbf{x}\|^2 ,
+\]
+discourages this concentration. It is implemented by solving ordinary NNLS
+on the augmented system
+$\left[\begin{smallmatrix}\mathbf{A}\\ \sqrt{\alpha}\,\mathbf{I}
+\end{smallmatrix}\right]\mathbf{x} =
+\left[\begin{smallmatrix}\mathbf{b}\\ \mathbf{0}\end{smallmatrix}\right]$,
+with $\alpha = 0.15$.
+
+\subsubsection*{Orthogonal Matching Pursuit (OMP)}
+
+Rather than solving for all candidates simultaneously, OMP builds the
+solution greedily:
+
+\begin{enumerate}
+  \item Start with an empty support set and residual $\mathbf{r} =
+        \mathbf{b}$.
+  \item Find the column of $\mathbf{A}$ most positively correlated with
+        $\mathbf{r}$.
+  \item Add it to the support and refit NNLS on the support only.
+  \item Repeat until the best correlation falls below 0.05 or the maximum
+        of 25 components is reached.
+\end{enumerate}
+
+This produces sparse solutions (10--25 components) that are faster to
+compute and physically more interpretable. When several columns have
+similar correlation --- within a 5\% band of the leader --- the ML scores
+act as a tiebreaker, preferring the species the classifier is more
+confident about.
+
+\subsubsection*{Forced-floor fitting}
+
+Some species are detected confidently by the classifier but driven to
+exactly zero by the solver, because a dominant neighbour explains their
+absorption region adequately. To prevent this, such species are given a
+lower bound of 0.002 rather than 0, and the problem is solved as a bounded
+least-squares problem using \code{lsq\_linear} with the BVLS method. This
+directly rescued CH$_3$COOH, HCOOH and \nhfour{} in testing.
+
+\subsubsection*{Backward elimination}
+
+After OMP and forcing, 25--33 components typically survive --- more than
+physically plausible. Backward elimination prunes them: the
+lowest-abundance component is tested for removal, and if removing it does
+not degrade the fit, it is dropped. This repeats until no further removal
+is safe. There is no fixed target count; the procedure stops naturally,
+at 8 components for a simple source and at 20 for a complex one.
+
+\subsection{Version 3.8 results on IRAS 2A}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lccccl@{}}
+\toprule
+\textbf{Version} & \textbf{Fit} & \textbf{ML recall} &
+\textbf{NNLS recall} & \textbf{Survivors} & \textbf{Key change} \\
+\midrule
+v3.7 baseline        & 92.1\% & 27\%  & 53\%  & 23 & Initial pipeline \\
+v3.8 OMP + floor     & 92.3\% & 87\%  & 87\%  & 33 & OMP, forced floor \\
+v3.8 backward elim.  & 90.6\% & 93\%  & 87\%  & 15 & Pruning added \\
+v3.8patch + \ocn     & 90.6\% & 100\% & 100\% & 16 & \ocn{} classifiers \\
+\bottomrule
+\end{tabular}
+\caption{Version 3.8 progression on the benchmark source. The final row
+reports perfect recall --- a result that Section~\ref{sec:leakage} shows
+cannot be trusted.}
+\end{table}
+
+% =====================================================================
+\section{The Data Leakage Problem}
+\label{sec:leakage}
+% =====================================================================
+
+\subsection{What data leakage means}
+
+Data leakage occurs when information that would not be available at
+prediction time influences the prediction. The classic textbook example is
+accidentally including the target variable among the input features: the
+model appears to perform superbly, and the performance is entirely
+illusory, because the information it depends on will not exist when the
+model is deployed.
+
+Leakage is dangerous precisely because it does not look like a bug. The
+code runs, the metrics improve, and the improvement is reported as
+progress. It is detected by reasoning about information flow, not by
+testing.
+
+\subsection{The leakage in v3.8}
+
+\begin{warnbox}
+\textbf{Critical finding.} The v3.8patch script that reported 15/15 recall
+was consulting the published ground truth during prediction. It was
+forcing components into the solution \emph{because} they appeared in the
+published answer, not because the spectral evidence supported them. The
+reported figure measures the pipeline's ability to reproduce an answer it
+had already been shown.
+\end{warnbox}
+
+Two separate mechanisms were identified.
+
+\subsubsection*{Mechanism 1 --- \code{TARGET\_SPECIES} forcing}
+
+The function \code{force\_missing\_components()} compared the current
+solution against a hard-coded dictionary of the species known to be present
+in IRAS 2A, identified which were absent from the solution, and then
+searched the library specifically for files that would fill those gaps.
+
+This is equivalent to a student checking their answers against the marking
+scheme mid-examination and correcting the ones that disagree. Whatever the
+resulting score, it does not measure what the examination was designed to
+measure.
+
+\subsubsection*{Mechanism 2 --- recall guard in backward elimination}
+
+The pruning step removed components one at a time, but before each removal
+it checked whether removing that component would reduce recall measured
+against the published list. Components were protected from removal
+specifically to preserve that recall number.
+
+This is the subtler of the two, and arguably the more instructive. The
+intention was reasonable --- ``do not throw away something we know is
+correct'' --- but the stopping criterion for an algorithm must never depend
+on the answer the algorithm is meant to produce. On a new source with no
+published list, this criterion simply does not exist, so the pipeline would
+behave differently there in an unpredictable way.
+
+\subsection{Why this mattered more than usual}
+
+In most machine learning projects leakage inflates a reported metric. Here
+the consequence was sharper, because the entire purpose of the project is
+generalisation to sources with no ground truth. A pipeline tuned --- even
+implicitly --- to reproduce the one source with a published answer offers
+no evidence whatsoever about its behaviour on L1448 IRS2 or IRS3B.
+
+Several parameter choices were re-examined in this light and found to have
+been set, knowingly or not, by what worked on the benchmark:
+
+\begin{itemize}
+  \item \code{N\_CANDIDATES = 50} and \code{TARGET\_SURVIVORS = 15} were
+        selected because they produced the best result on IRAS 2A;
+  \item a forcing threshold of 0.15 had been chosen because it happened to
+        rescue the specific species IRAS 2A was missing;
+  \item ``recall-aware forcing'' --- forcing a species if doing so
+        increased recall --- was leakage stated directly as a design
+        feature.
+\end{itemize}
+
+\subsection{The structural fix}
+
+The repair was not to remove individual lines of offending code, but to
+change the structure of the program so that the error cannot recur:
+
+\begin{goodbox}
+\textbf{The published ground truth (\code{paper\_mixtures}) is confined to
+a single reporting function that executes after every algorithmic decision
+has been made.} It can read the final result; it cannot influence it. No
+function involved in selection, forcing, protection or elimination accepts
+it as an argument.
+
+\vspace{4pt}
+This is enforced by the call structure, not by discipline. Reintroducing
+the leak would require deliberately threading ground truth through function
+signatures that do not currently accept it.
+\end{goodbox}
+
+Equally important, the stopping criterion for backward elimination was
+changed from a recall criterion to a \emph{fit-quality} criterion: a
+component is removed if removing it degrades the residual by less than
+0.5\%. Fit quality is computable on any source, with or without a published
+answer, so the algorithm now behaves identically on the benchmark and on
+new sources.
+
+% =====================================================================
+\section{Version 3.9 --- The Clean Pipeline}
+% =====================================================================
+
+Version 3.9 is a rewrite of the prediction and fitting stages. The
+classifiers themselves were not retrained --- the leakage was entirely
+downstream of Stage 1.
+
+\subsection{Architecture}
+
+\begin{keybox}
+\textbf{Stage 1 --- Detection.} LightGBM classifiers score all 286 spectral
+clusters against the \emph{silicate-included} optical depth spectrum.
+Species clearing the score floor become candidates.
+
+\vspace{6pt}
+\textbf{Stage 2 --- Quantification.} Multi-component NNLS, initialised by
+OMP, fits the \emph{silicate-removed} ice-only spectrum using the candidate
+laboratory spectra as basis vectors.
+\end{keybox}
+
+\subsubsection*{Why two different spectra}
+
+This asymmetry is deliberate and frequently misunderstood. The classifiers
+were trained on synthetic spectra that \emph{include} silicate absorption,
+so at inference they must be shown a spectrum with silicate present. The
+laboratory reference spectra used for fitting contain \emph{no} silicate,
+so the target for fitting must have silicate removed. Using the wrong
+spectrum for either stage degrades performance substantially.
+
+Where only the silicate-removed spectrum is available --- as is the case
+for the IRAS 2A files --- silicate is reconstructed with a Drude profile
+and added back before classification.
+
+\subsection{Option A --- ML-score parent forcing (primary method)}
+
+After OMP selects an initial component set, the pipeline checks whether
+every parent species with an ML score of at least 20\% is represented in
+the solution. Any that is missing is forced in at a floor abundance of
+0.002, using its highest-scoring candidate file.
+
+The critical property is that this rule consults \emph{only classifier
+output}. It makes no reference to any published result, so it executes
+identically on IRAS 2A and on a source nobody has ever analysed. The
+threshold of 20\% is fixed and generic, deliberately replacing the 0.15
+that had been tuned to the benchmark.
+
+\subsection{Option C --- confidence-weighted Tikhonov NNLS}
+
+An alternative formulation replaces uniform regularisation with per-column
+weights derived from classifier confidence:
+\[
+  \alpha_j \;=\; \frac{\alpha}{s_j + \varepsilon},
+\]
+where $s_j$ is the ML score of column $j$. High confidence yields a low
+penalty and permits a large coefficient; low confidence yields a high
+penalty and pushes the coefficient toward zero. This suppresses
+low-confidence false positives smoothly, with no hard thresholds anywhere.
+
+It is elegant, and it underperforms: 12/15 versus 15/15. Without explicit
+forcing, minor species present at genuinely small abundances are penalised
+to zero along with the false positives. Option A remains the primary
+method; Option C is retained as a comparison that demonstrates the forcing
+step is doing real work rather than merely patching over a weakness.
+
+\subsection{OMP protection}
+
+Any component that OMP selected independently \emph{and} that carries an ML
+score of at least 10\% is protected from backward elimination. The
+reasoning is that two independent lines of evidence support it: OMP chose
+it on spectral residual grounds, and the classifier assigned it meaningful
+confidence on pattern-recognition grounds.
+
+This threshold is flagged internally as probably too permissive --- it
+weakens elimination more than intended --- so every protected component is
+tagged in the output rather than silently accepted.
+
+\subsection{Diagnostic flags}
+
+Three flags are attached to every reported component, so that weaknesses
+appear in the output rather than hiding inside it:
+
+\begin{description}[style=nextline, leftmargin=0pt, labelindent=0pt, labelwidth=0pt, labelsep=0pt, itemsep=4pt]
+  \item[\code{protected\_only}] The component survived only because
+        protection shielded it from elimination, not because independent
+        fitting confirmed it.
+  \item[\code{solver\_override\_suspect}] The solver assigned a
+        substantial abundance to a component the classifier scored low.
+        This usually indicates the solver is absorbing a band-shape
+        artifact rather than detecting the species.
+  \item[Quantitative / probabilistic split] Components with fitted
+        fraction above 1\% are reported as quantitative detections; those
+        below are reported as probable detections at upper-limit abundance.
+\end{description}
+
+\subsection{The honest assessment of 15/15}
+
+Version 3.9 Option A achieves 15/15 recall on IRAS 2A with no leakage, at
+91.1\% fit quality and 21 surviving components. That number requires
+careful statement:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Category} & \textbf{Count} & \textbf{Basis} \\
+\midrule
+Quantitative detections & $\sim$13 &
+Fitted fraction $>1\%$, confirmed by both OMP and classifier \\
+Floor-level detections  & $\sim$6 &
+Fraction $<0.5\%$, present only because forcing inserted them \\
+\bottomrule
+\end{tabular}
+\caption{Breakdown of the 15/15 result.}
+\end{table}
+
+\begin{goodbox}
+\textbf{The defensible claim:} 13 species detected quantitatively, plus 6
+flagged as probable detections at upper-limit abundance. The pipeline
+reached 15/15 recall without using any source-specific information --- but
+6 of those 15 are detection claims rather than abundance measurements, and
+must be reported as upper limits.
+\end{goodbox}
+
+This is a weaker claim than ``15/15 recall'' and a considerably stronger
+one than the leaked v3.8 figure, because it is accompanied by an explicit
+account of what each number does and does not establish.
+
+% =====================================================================
+\section{Results}
+% =====================================================================
+
+\subsection{Benchmark validation --- IRAS 2A}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lccccl@{}}
+\toprule
+\textbf{Version} & \textbf{Fit} & \textbf{ML recall} &
+\textbf{NNLS recall} & \textbf{Survivors} & \textbf{Status} \\
+\midrule
+v3.7 baseline       & 92.1\% & 27\%  & 53\%   & 23 & --- \\
+v3.8 OMP + floor    & 92.3\% & 87\%  & 87\%   & 33 & --- \\
+v3.8 backward elim. & 90.6\% & 93\%  & 87\%   & 15 & --- \\
+v3.8patch + \ocn    & 90.6\% & 100\% & 100\%  & 16 & \textcolor{warnred}{\textbf{leaked}} \\
+v3.9 Option A       & 91.1\% & ---   & 15/15  & 21 & \textcolor{goodgreen}{\textbf{clean}} \\
+v3.9 Option C       & 91.1\% & ---   & 12/15  & 17 & \textcolor{goodgreen}{\textbf{clean}} \\
+\bottomrule
+\end{tabular}
+\caption{Full version history on the benchmark source.}
+\end{table}
+
+\subsection{Blind generalisation --- L1448 IRS2 and IRS3B}
+
+Neither source has a published decomposition, so there is no recall figure
+to report. The table below \emph{is} the result, not a comparison against
+anything.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Property} & \textbf{L1448 IRS2} & \textbf{L1448 IRS3B} \\
+\midrule
+Type                        & Class 0 protostar & Class 0 binary \\
+Luminosity                  & 5.2\,$L_\odot$    & Unknown (binary) \\
+Distance                    & $\sim$300\,pc     & $\sim$300\,pc \\
+$\tau$(6\um) \htwoo         & 1.883             & 1.872 \\
+$\tau$(15.2\um) \cotwo      & 3.170             & 2.493 \\
+$\tau$(20\um) artifact      & 1.410             & 1.379 \\
+NNLS fit quality            & 73.9\%            & 73.4\% \\
+Surviving components        & 13                & 13 \\
+\bottomrule
+\end{tabular}
+\caption{Blind run results on the two new sources.}
+\end{table}
+
+\subsubsection*{Species detected in both sources}
+
+\htwoo{} (dominant), \cotwo, CO, CH$_4$, NH$_3$, \nhfour, H$_2$S, HCOOH
+(formic acid), HCOO$^-$ (formate), \ocn{} and organic residue. The CH$_4$
+detection at $\tau(7.7\,\mu\text{m}) = 0.28$ and $0.40$ is the first for
+these sources.
+
+That both sources return the same species set and the same survivor count
+is meaningful evidence: it suggests the pipeline is responding to
+physically consistent ice chemistry rather than to source-specific noise.
+
+\subsubsection*{Species absent, and why}
+
+\begin{goldbox}
+\textbf{\chthreeoh{} (methanol) is not detected in either source.} Its
+primary C--O stretch at 9.74\um{} falls exactly where silicate
+over-subtraction drives the ice-only optical depth to zero. This is a
+continuum artifact, not a genuine non-detection, and it is the single
+clearest demonstration that the remaining continuum problem has real
+scientific cost.
+\end{goldbox}
+
+SO$_2$ and H$_2$CO are absent from L1448 but present in IRAS 2A. This is
+physically reasonable rather than suspicious: IRAS 2A is roughly seven
+times more luminous, producing a warmer inner envelope with more complex
+chemistry, whereas L1448 IRS2 at 5.2\,$L_\odot$ would be expected to have a
+simpler ice inventory.
+
+The lower fit quality on the new sources (73--74\% versus 91\%) traces
+directly to the long-wavelength continuum artifact, not to the
+classification or fitting logic.
+
+% =====================================================================
+\section{Library Improvement --- Gaussian Peak Decomposition}
+% =====================================================================
+
+A substantial side effort replaced the raw laboratory files with smooth
+analytic representations. Each spectrum is decomposed into a sum of
+asymmetric Gaussian profiles, one per absorption band.
+
+\subsection{Motivation}
+
+\begin{itemize}
+  \item \textbf{Clean basis vectors.} Raw files carry varying baselines,
+        noise spikes and irregular sampling grids; fitted Gaussians are
+        smooth and artifact-free.
+  \item \textbf{Temperature interpolation.} Once peak position, width and
+        amplitude are fitted at the discrete measured temperatures, they
+        can be interpolated continuously, allowing the fitting stage to
+        work at any temperature rather than only the measured ones.
+  \item \textbf{Controllable band ratios.} Relative band amplitudes within
+        a mixture become explicit parameters during synthetic data
+        generation.
+  \item \textbf{Better separation of weak species.} A cleaner basis helps
+        distinguish SO$_2$ at 8.7\um{} and CH$_3$CH$_2$OH at 9.5\um{} from
+        the surrounding silicate absorption.
+\end{itemize}
+
+\subsection{Implementation}
+
+\begin{itemize}
+  \item \textbf{Baseline subtraction:} Asymmetric Least Squares (ALS) from
+        the \code{pybaselines} library.
+  \item \textbf{Peak finding:} \code{scipy.signal.find\_peaks} with
+        prominence and width constraints tuned for ice bands (minimum
+        prominence 4\% of peak, minimum width 5\,cm$^{-1}$).
+  \item \textbf{Fitting:} LMFIT with Levenberg--Marquardt optimisation.
+        Each peak uses a different $\sigma$ on its left and right sides, to
+        capture the characteristic asymmetry of phonon-broadened ice bands.
+  \item \textbf{Parallel execution:} \code{ProcessPoolExecutor} with seven
+        workers.
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Result} & \textbf{Value} \\
+\midrule
+Files processed successfully & 1198 / 1209 \\
+Files failed                 & 12 (11 with no peaks, 1 zero after baseline) \\
+Processing time              & 15\,min 55\,s (7 workers, vs.\ 40+ min serial) \\
+Mean peaks per file          & 7.5 \\
+Mean fit RMS                 & 0.381 \\
+\bottomrule
+\end{tabular}
+\caption{Batch decomposition over the full library.}
+\end{table}
+
+\begin{goldbox}
+\textbf{Known issue.} The mean RMS of 0.381 is high. Two causes: mixture
+files with broad overlapping bands need more than 7--8 Gaussian components,
+and the ALS baseline under-performs on high-absorbance files ($\tau > 3$)
+because its smoothing parameter $\lambda$ is not yet adaptive. This must be
+fixed before the Gaussian library can be used to retrain the classifiers.
+\end{goldbox}
+
+An interactive visualiser (\code{gaussian\_visualizer.py}) was also built,
+displaying the raw spectrum with its fitted baseline, the individual
+Gaussian components, the residuals and the reconstruction, for inspection
+of any file on demand.
+
+% =====================================================================
+\section{Current State and Known Limitations}
+\label{sec:known-problems}
+% =====================================================================
+
+\subsection{Working reliably}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}L{5.2cm}L{9.6cm}@{}}
+\toprule
+\textbf{Component} & \textbf{Notes} \\
+\midrule
+LightGBM classifiers (286) & Trained and validated; not yet retrained on
+Gaussian data \\
+\ocn{} patch classifiers (2) & PR-AUC 94.6\% and 98.7\% \\
+Continuum fitting (L-BFGS-B) & Converges reliably on all three sources \\
+Two-component silicate model & Working, but reaches its upper bound on
+L1448 \\
+OMP + backward elimination & Clean, source-agnostic, no leakage \\
+Option A parent forcing & Deployed, generic 20\% threshold \\
+Gaussian peak database & 1198/1209 files; baseline fix needed \\
+IRAS 2A validation & 91.1\% fit, 13 quantitative + 6 floor detections \\
+L1448 IRS2 / IRS3B & Blind run complete, 13 species each \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Known problems}
+
+\begin{description}[style=nextline, leftmargin=0pt, labelindent=0pt, labelwidth=0pt, labelsep=0pt, itemsep=5pt]
+  \item[Long-wavelength optical depth artifact.]
+  $\tau(20\,\mu\text{m})\approx1.4$ on both L1448 sources, where physics
+  requires approximately zero. Root cause: a degree-4 polynomial cannot fit
+  both the ice region and the thermal tail simultaneously.
+
+  \item[Silicate over-subtraction.]
+  The silicate peak optical depth reaches its upper bound of 8.0 on the
+  L1448 sources, zeroing the 9.7\um{} region. This directly prevents
+  methanol detection (C--O stretch at 9.74\um) and ammonia detection
+  (umbrella mode at 9.34\um). Same root cause as above.
+
+  \item[Gaussian baseline quality.]
+  ALS fails on high-absorbance mixture files; adaptive $\lambda$ selection
+  is required before the Gaussian library can be used for retraining.
+
+  \item[Floor-level detections.]
+  Six of the fifteen species detected on IRAS 2A sit at forced floor
+  abundance and are not independently quantified. They must be reported as
+  upper limits.
+
+  \item[Suspicious \cotwo{} isotopologue component.]
+  One component contributes 14.6\% of the total fitted abundance at only
+  5.1\% classifier confidence. This pattern --- large coefficient, low
+  confidence --- suggests the solver is absorbing a \cotwo{} band-shape
+  mismatch rather than genuinely detecting the isotopologue. It is flagged
+  by \code{solver\_override\_suspect}.
+
+  \item[Option C underperformance.]
+  Confidence-weighted NNLS gives 12/15 rather than 15/15, because it has no
+  explicit forcing for minor species at low classifier confidence.
+\end{description}
+
+% =====================================================================
+\section{Roadmap}
+% =====================================================================
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}L{2.4cm}L{4.8cm}L{4.9cm}L{2.3cm}@{}}
+\toprule
+\textbf{Priority} & \textbf{Upgrade} & \textbf{Expected impact} &
+\textbf{Status} \\
+\midrule
+1 --- Critical & Silicate continuum with $\tau = 0$ constraint beyond
+19\um & Fixes methanol detection; removes long-wave artifact & Planned \\
+2 --- High & Adaptive ALS $\lambda$ for Gaussian baselines & Enables
+reliable Gaussian library for retraining & In progress \\
+3 --- High & Retrain classifiers on Gaussian-derived synthetic data &
+Improves SO$_2$, H$_2$CO, CH$_3$CH$_2$OH detection & Pending \#2 \\
+4 --- Medium & Noise-weighted NNLS ($1/\sigma_i$ weights) & $+3$--5\% fit
+quality & Planned v3.10 \\
+5 --- Medium & Use the curated baseline-corrected library as primary basis
+& $+3$--4\% fit quality & Planned v3.11 \\
+6 --- Medium & \code{optool} synthetic silicate profiles & Resolves the
+silicate upper-bound problem & Planned v3.12 \\
+7 --- Lower & Run on IRAS 4A, B335 and other Class 0 sources &
+Generalisation validation beyond Perseus & Pending data \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{What can and cannot be claimed today}
+
+\begin{goodbox}
+\textbf{Defensible now:}
+\begin{itemize}
+  \item 15/15 recall on IRAS 2A without using published ground truth
+        during prediction.
+  \item 91\% fit quality on the benchmark source.
+  \item Physical detections of \htwoo, \cotwo, CO, CH$_4$, NH$_3$,
+        \nhfour, H$_2$S, HCOOH, HCOO$^-$, \ocn{} and organic residue in
+        both L1448 sources.
+  \item A two-stage architecture that runs on a new Class 0 protostar with
+        no per-source tuning.
+\end{itemize}
+\end{goodbox}
+
+\begin{goldbox}
+\textbf{Needs strengthening before a science paper:}
+\begin{itemize}
+  \item Methanol detection requires fixing the silicate subtraction.
+  \item Weak species (SO$_2$, H$_2$CO, CH$_3$CH$_2$OH) need classifiers
+        retrained on Gaussian-derived data.
+  \item Fit quality on new sources must reach $\ge 85\%$ (currently
+        73--74\%).
+  \item At least three to four additional sources are needed before a
+        generalisation claim is supportable.
+\end{itemize}
+\end{goldbox}
+
+% =====================================================================
+\section{Summary of Techniques Applied}
+% =====================================================================
+
+For quick reference, every substantive technique in the pipeline and the
+reason it was chosen:
+
+\small
+\begin{longtable}{@{}L{5.0cm}L{10.0cm}@{}}
+\toprule
+\textbf{Technique} & \textbf{Why it was used} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Technique} & \textbf{Why it was used} \\
+\midrule
+\endhead
+Hierarchical clustering, complete linkage, cosine distance &
+Merge spectrally indistinguishable temperature variants; 1209 files
+$\rightarrow$ 284 targets \\
+Dirichlet mixture sampling &
+Generates non-negative fractions summing to one --- the natural model of a
+physical mixture \\
+Drude oscillator silicate model &
+Physically motivated profile for mineral dust absorption \\
+Synthetic data generation (135k spectra) &
+Supervised learning requires labels; real labelled spectra are almost
+nonexistent \\
+LightGBM binary classification &
+Fast, handles class imbalance well; binary framing avoids the instability
+of regression at 96\% sparsity \\
+PR-AUC as primary metric &
+$R^2$ is meaningless at high sparsity; F1 depends on an arbitrary threshold \\
+Recall-first threshold tuning (90\%) &
+A missed detection is unrecoverable; a false alarm is removed later by the
+fitting stage \\
+Per-species \code{scale\_pos\_weight} &
+Species prevalence ranges from 1\% to 8\%; one global weight cannot serve
+both \\
+Two-tier hyperparameters &
+Intrinsically weak species need more capacity and higher positive weight \\
+Targeted generation, hard-species $\alpha$ boost &
+Ensures weak species clear the noise floor in training data \\
+Silicate reconstruction before inference &
+Classifiers were trained with silicate present and must see it at
+prediction time \\
+Non-Negative Least Squares &
+Mixture coefficients cannot be negative \\
+Tikhonov regularisation &
+Prevents the solver concentrating all weight on dominant species \\
+Orthogonal Matching Pursuit &
+Produces sparse, interpretable solutions; avoids the dense solutions of
+simultaneous fitting \\
+Cosine deduplication (0.015) &
+Removes near-collinear columns that destabilise the solver \\
+Forced-floor via bounded least squares &
+Rescues confidently detected species that the solver zeroes out \\
+Backward elimination on fit quality &
+Principled pruning with a criterion computable on any source \\
+Structural isolation of ground truth &
+Makes the data leakage of v3.8 impossible to reintroduce accidentally \\
+Quantitative / probabilistic split &
+Distinguishes measured abundances from detection claims in the output \\
+Asymmetric Gaussian decomposition &
+Clean, interpolatable basis vectors to replace noisy raw files \\
+L-BFGS-B with exponential barrier &
+Differentiable constraint enforcement; converges where Nelder--Mead did not \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+% =====================================================================
+\section{Glossary}
+% =====================================================================
+
+\small
+\begin{longtable}{@{}L{3.6cm}L{11.4cm}@{}}
+\toprule
+\textbf{Term} & \textbf{Definition} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Term} & \textbf{Definition} \\
+\midrule
+\endhead
+ALS & Asymmetric Least Squares --- a baseline subtraction algorithm that
+fits a smooth curve lying below absorption peaks \\
+Class 0 protostar & The youngest stage of star formation, still embedded in
+its natal cloud with most mass in the envelope rather than the forming star \\
+Cosine distance & $1 - \cos\theta$ between two vectors; measures shape
+similarity while ignoring overall scale \\
+Drude profile & A mathematical profile from the physics of a damped
+harmonic oscillator, used to model silicate dust absorption \\
+Fit quality & $1 - \|\mathbf{b}-\mathbf{A}\mathbf{x}\| / \|\mathbf{b}\|$;
+how much of the observed signal the fitted model reproduces \\
+LIDA & Leiden Ice Database --- 1209 laboratory ice absorption spectra at
+various temperatures and mixture compositions \\
+LightGBM & A gradient-boosted decision tree framework, faster and more
+memory-efficient than standard boosting implementations \\
+MIRI-MRS & Mid-InfraRed Instrument, Medium Resolution Spectrograph, on
+JWST; covers 5--28\um{} at $R\sim1300$--3700 \\
+NNLS & Non-Negative Least Squares --- least squares with the constraint
+$\mathbf{x}\ge0$ \\
+OMP & Orthogonal Matching Pursuit --- a greedy algorithm that selects
+dictionary columns one at a time by residual correlation \\
+Optical depth $\tau$ & $\ln(F_{\text{cont}}/F_{\text{obs}})$; larger
+$\tau$ means more absorption \\
+PR-AUC & Area under the precision--recall curve; the standard metric for
+imbalanced detection problems \\
+Recall & Fraction of truly present species that the system detects \\
+Tikhonov regularisation & An $\|\mathbf{x}\|^2$ penalty added to least
+squares to discourage extreme coefficients \\
+$\tau$ ice-only & Optical depth with silicate removed; the fitting target,
+because laboratory spectra contain no silicate \\
+$\tau$ with silicate & Total optical depth including silicate; the
+classifier input, because classifiers were trained on such spectra \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+% =====================================================================
+\section*{Key References}
+\addcontentsline{toc}{section}{Key References}
+% =====================================================================
+
+\small
+\begin{itemize}[leftmargin=1.2em]
+  \item Rayalacheruvu P., Majumdar L., Rocha W.\,R.\,M., et al.\ (2025).
+        \textit{ApJS}, \textbf{281}, 51. --- The original INDRA paper;
+        IRAS 2A ground truth with 15 components.
+  \item Boogert A.\,C.\,A., Pontoppidan K.\,M., Knez C., et al.\ (2008).
+        \textit{ApJ}, \textbf{678}, 985. --- Spitzer c2d ice survey;
+        Class 0 abundance reference ranges.
+  \item Weingartner J.\,C.\ \& Draine B.\,T.\ (2001). \textit{ApJ},
+        \textbf{548}, 296. --- Silicate grain composition and optical
+        properties used in the two-component Drude model.
+  \item Rocha W.\,R.\,M., van Dishoeck E.\,F., Ressler M.\,E., et al.\
+        (2024). \textit{A\&A}, \textbf{683}, A124. --- JWST MIRI-MRS
+        analysis of IRAS 2A; source of the optical depth files used in
+        validation.
+  \item Slavicinska K., et al.\ (2025). --- \htwoo:NH$_3$:H$_2$S 10:2:1 at
+        135\,K, the highest-scoring classifier file across all three
+        sources.
+  \item Öberg K.\,I., et al.\ (2007). --- Pure \htwoo{} ice library spectra
+        at 15--160\,K, used throughout the fitting basis.
+  \item Pontoppidan K.\,M., et al.\ (2008). \textit{ApJ}, \textbf{678},
+        1005. --- Pure \cotwo{} grain-shape corrected spectra.
+  \item Novozamsky J.\,H., et al.\ (2001). --- HNCO:NH$_3$ at 80\,K, the
+        \ocn{} reference spectrum.
+\end{itemize}
+\normalsize
+
+\vspace{1.2cm}
+\begin{tcolorbox}[colback=navy, colframe=navy, arc=2pt,
+                  left=12pt, right=12pt, top=10pt, bottom=10pt]
+{\color{white}\large\bfseries Bottom line\par}
+\vspace{4pt}
+{\color{white}
+INDRA 2.0 has progressed from a manual, expert-driven tool to an automated
+machine learning pipeline that achieves 15/15 recall on its benchmark
+source without consulting any source-specific information during
+prediction. It has been run blind on two previously unanalysed Class 0
+protostars, detecting 13 physically consistent ice species in each. The
+principal remaining bottleneck is the accuracy of the silicate subtraction
+near 9--10\um, which both prevents methanol detection and inflates the
+long-wavelength optical depth. Correcting this, and retraining the
+classifiers on Gaussian-derived synthetic data, are the two highest-priority
+next steps before the tool is ready for publication.}
+\end{tcolorbox}
+
+\end{document}
